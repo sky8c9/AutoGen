@@ -16,7 +16,7 @@ class MedLeaveReport:
     MED_LEAVE_RATE = 0.006
 
 class EamsReport:
-    COL_LABELS = ['SSN', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'Hours', 'Wages', 'SOC']
+    COL_LABELS = ['SSN', 'EamsNameConvention', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'Hours', 'Wages', 'SOC']
     EXCL_LIST = ['sick']
 
 class LnIReport:

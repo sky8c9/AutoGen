@@ -29,7 +29,7 @@ class Report():
         for table in tables:
             df = table.df
 
-            print(df)
+            # print(df)
             
             # Convert payroll items to lower case, hour and amount column to numeric data format
             df[Table.PAYROLL_ITEM_COL] = df[Table.PAYROLL_ITEM_COL].str.lower()
@@ -85,8 +85,9 @@ class Report():
                     self.total_lni_hours += lni_worked_hours
 
                     # Append fields to dataframe
-                    self.medReportDf.loc[len(self.eamsReportDf)] = [ssn, lName, fName, mName, total_hours, med_wages, 'N']
-                    self.eamsReportDf.loc[len(self.eamsReportDf)] = [ssn, lName, fName, mName, '', eams_hours, eams_wages, '']
+                    EamsNameConvention = lName.replace(' ', '-') + ', ' + fName.replace(' ', '-') + ' ' + mName
+                    self.eamsReportDf.loc[len(self.eamsReportDf)] = [ssn, EamsNameConvention, lName, fName, mName, '', eams_hours, eams_wages, '']
+                    self.medReportDf.loc[len(self.medReportDf)] = [ssn, lName, fName, mName, total_hours, med_wages, 'N']
 
                 i+=1
 
@@ -99,18 +100,17 @@ class Report():
     def getName(self, name):
         # Split input name and find location of middle initial
         l = name.split(' ')
+        last_name = l[-1]
         mIndex =  [i for i, s in enumerate(l) if len(s) == 1] 
 
         if len(mIndex) > 0: # case when there is middle initial
             first_name = l[:mIndex[0]]
             middle_initial = l[mIndex[0]]
-            last_name = l[mIndex[0]+1:]
-        else: # otherwise, last name is the last word
-            first_name = l[0:-1]
+        else: # otherwise
+            first_name = l[:-1]
             middle_initial = ''
-            last_name = l[-1]
-
-        return ' '.join(first_name), middle_initial, ' '.join(last_name)
+    
+        return ' '.join(first_name), middle_initial, last_name
 
     def medLeaveReportGen(self):
         # Format med leave report and output csv
@@ -122,7 +122,7 @@ class Report():
         # Format eams report and output csv
         self.eamsReportDf['Wages'] = self.eamsReportDf['Wages'].round(2)
         self.eamsReportDf['Hours'] = self.eamsReportDf['Hours'].apply(np.round).astype(int)
-        self.eamsReportDf.to_csv(f'{IO.EAMS}/{self.company_name} - EAMS.csv', float_format='%.2f', header=None, index=False)
+        self.eamsReportDf[['SSN', 'EamsNameConvention', 'Hours', 'Wages']].to_csv(f'{IO.EAMS}/{self.company_name} - EAMS.csv', float_format='%.2f', header=None, index=False)
 
 def createReportFolder(folders):
     for folder in folders:
