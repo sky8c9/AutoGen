@@ -4,7 +4,6 @@ import camelot
 import numpy as np
 import pandas as pd
 from constants import IO, Table, KeyWord, MedLeaveReport, EamsReport, LnIReport, Summary
-from re import search
 
 class Report():
     def __init__(self, fileName):
@@ -43,6 +42,7 @@ class Report():
                 eams_excl_wage = 0
                 eams_excl_hour = 0
                 lni_worked_hours = 0
+                lni_wage = 0
                 addToReport = True
                 total_hours = 0
 
@@ -65,11 +65,13 @@ class Report():
                         eams_excl_hour += df.iloc[i][Table.HOUR_COL]
                         eams_excl_wage += df.iloc[i][Table.AMOUNT_COL]
 
-                    # Update hours based on selection criteria
-                    hr = df.iloc[i][Table.HOUR_COL] 
-                    total_hours += hr
+                    # Add to total hour
+                    total_hours += df.iloc[i][Table.HOUR_COL] 
+
+                    # LnI hour and wage
                     if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], LnIReport.WORKED_LIST):
-                        lni_worked_hours += hr
+                        lni_worked_hours += df.iloc[i][Table.HOUR_COL]
+                        lni_wage += df.iloc[i][Table.AMOUNT_COL]
                     
                     i+=1    
 
@@ -81,7 +83,7 @@ class Report():
 
                     # Update total
                     self.total_med_wages += med_wages
-                    self.total_lni_wages += lni_worked_hours
+                    self.total_lni_wages += lni_wage
                     self.total_lni_hours += lni_worked_hours
 
                     # Append fields to dataframe
@@ -141,7 +143,7 @@ def createSummary(entries):
     summary = pd.DataFrame(columns=Summary.COL_LABELS)
     for entry in entries:
         summary.loc[len(summary)] = entry
-    summary.to_csv('Summary.csv', float_format='%.2f', header=None, index=False)
+    summary.to_csv('Summary.csv', float_format='%.2f', index=False)
 
 def main():
     createReportFolder(IO.Folders)    
@@ -149,14 +151,15 @@ def main():
     # Assign worker and compute
     tasks = []
     for file in os.listdir(IO.Input):
-        tasks.append(Report(f'{IO.Input}/{file}'))
+        if not file.startswith('.'):
+            tasks.append(Report(f'{IO.Input}/{file}'))
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         for idx, task in enumerate(tasks):
             executor.submit(task.gen)
 
     # Summary Report
-    entries = [[task.company_name, task.total_med_wages, task.total_lni_wages, task.total_lni_wages * MedLeaveReport.MED_LEAVE_RATE, task.total_lni_hours] for task in tasks]
+    entries = [[task.company_name, task.total_med_wages, task.total_med_wages * MedLeaveReport.MED_LEAVE_RATE, task.total_lni_wages, task.total_lni_hours] for task in tasks]
     createSummary(entries)
 
 if __name__ == "__main__":
