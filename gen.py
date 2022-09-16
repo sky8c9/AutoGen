@@ -42,7 +42,6 @@ class Report():
                 eams_excl_wage = 0
                 eams_excl_hour = 0
                 lni_worked_hours = 0
-                lni_wage = 0
                 addToReport = True
                 total_hours = 0
 
@@ -71,7 +70,6 @@ class Report():
                     # LnI hour and wage
                     if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], LnIReport.WORKED_LIST):
                         lni_worked_hours += df.iloc[i][Table.HOUR_COL]
-                        lni_wage += df.iloc[i][Table.AMOUNT_COL]
                     
                     i+=1    
 
@@ -83,7 +81,7 @@ class Report():
 
                     # Update total
                     self.total_med_wages += med_wages
-                    self.total_lni_wages += lni_wage
+                    self.total_lni_wages += df.iloc[i][Table.AMOUNT_COL]
                     self.total_lni_hours += lni_worked_hours
 
                     # Append fields to dataframe
