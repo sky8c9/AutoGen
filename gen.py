@@ -21,75 +21,69 @@ class Report():
         self.eamsReportGen()
 
     def addEmployee(self, fname):
-        # Extract dataframes from multiple pages
+        # Merge dataframes from multiple pages
         tables = camelot.read_pdf(fname, flavor='stream', pages='all', table_areas=Table.TABLE_LOC)
+        df = pd.concat([table.df for table in tables]);
         
-        # Loop through each table
-        for table in tables:
-            df = table.df
+        # Convert payroll items to lower case, hour and amount column to numeric data format
+        df[Table.PAYROLL_ITEM_COL] = df[Table.PAYROLL_ITEM_COL].str.lower()
+        df[Table.HOUR_COL] = pd.to_numeric(df[Table.HOUR_COL].str.replace(',','')).fillna(0)
+        df[Table.AMOUNT_COL] = pd.to_numeric(df[Table.AMOUNT_COL].str.replace(',','')).fillna(0)
 
-            # print(df)
+        i = 0
+        while(i < len(df) - 1):
+            med_leave_excl_wage = 0
+            eams_excl_wage = 0
+            eams_excl_hour = 0
+            lni_worked_hours = 0
+            addToReport = True
+            total_hours = 0
+
+            # Process employee info
+            fName, mName, lName = self.getName(df.iloc[i][Table.INFO_COL])
+            ssn = df.iloc[i+1][Table.INFO_COL]
             
-            # Convert payroll items to lower case, hour and amount column to numeric data format
-            df[Table.PAYROLL_ITEM_COL] = df[Table.PAYROLL_ITEM_COL].str.lower()
-            df[Table.HOUR_COL] = pd.to_numeric(df[Table.HOUR_COL].str.replace(',','')).fillna(0)
-            df[Table.AMOUNT_COL] = pd.to_numeric(df[Table.AMOUNT_COL].str.replace(',','')).fillna(0)
+            # Process payroll items
+            while(not (KeyWord.EMPLOYEE_SEPARATOR in df.iloc[i][Table.INFO_COL])):                    
+                # Skip corporate officer salary
+                if KeyWord.OFFICER_SALARY in df.iloc[i][Table.PAYROLL_ITEM_COL]:
+                    addToReport = False
 
-            # Process all row - except the final summary row
-            i = 0
-            while(i < len(df) - 1):
-                med_leave_excl_wage = 0
-                eams_excl_wage = 0
-                eams_excl_hour = 0
-                lni_worked_hours = 0
-                addToReport = True
-                total_hours = 0
+                # Medical Leave excluding list running sum
+                if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], MedLeaveReport.EXCL_LIST):
+                    med_leave_excl_wage +=df.iloc[i][Table.AMOUNT_COL]
 
-                # Process employee info
-                fName, mName, lName = self.getName(df.iloc[i][Table.INFO_COL])
-                ssn = df.iloc[i+1][Table.INFO_COL]
-            
-                # Process payroll items
-                while(not (KeyWord.EMPLOYEE_SEPARATOR in df.iloc[i][Table.INFO_COL])):                    
-                    # Skip corporate officer salary
-                    if KeyWord.OFFICER_SALARY in df.iloc[i][Table.PAYROLL_ITEM_COL]:
-                        addToReport = False
+                # EAMS excluding list running sum
+                if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], EamsReport.EXCL_LIST):
+                    eams_excl_hour += df.iloc[i][Table.HOUR_COL]
+                    eams_excl_wage += df.iloc[i][Table.AMOUNT_COL]
 
-                    # Medical Leave excluding list running sum
-                    if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], MedLeaveReport.EXCL_LIST):
-                        med_leave_excl_wage +=df.iloc[i][Table.AMOUNT_COL]
+                # Add to total hour
+                total_hours += df.iloc[i][Table.HOUR_COL] 
 
-                    # EAMS excluding list running sum
-                    if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], EamsReport.EXCL_LIST):
-                        eams_excl_hour += df.iloc[i][Table.HOUR_COL]
-                        eams_excl_wage += df.iloc[i][Table.AMOUNT_COL]
+                # LnI hour and wage
+                if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], LnIReport.WORKED_LIST):
+                    lni_worked_hours += df.iloc[i][Table.HOUR_COL]
+                
+                i+=1    
 
-                    # Add to total hour
-                    total_hours += df.iloc[i][Table.HOUR_COL] 
+            if addToReport:
+                # Update wages and hours of current employee
+                eams_wages = df.iloc[i][Table.AMOUNT_COL] - eams_excl_wage
+                med_wages = df.iloc[i][Table.AMOUNT_COL] - med_leave_excl_wage
+                eams_hours = total_hours - eams_excl_hour
 
-                    # LnI hour and wage
-                    if self.contains(df.iloc[i][Table.PAYROLL_ITEM_COL], LnIReport.WORKED_LIST):
-                        lni_worked_hours += df.iloc[i][Table.HOUR_COL]
-                    
-                    i+=1    
+                # Update total
+                self.total_med_wages += med_wages
+                self.total_lni_wages += df.iloc[i][Table.AMOUNT_COL]
+                self.total_lni_hours += lni_worked_hours
 
-                if addToReport:
-                    # Update wages and hours of current employee
-                    eams_wages = df.iloc[i][Table.AMOUNT_COL] - eams_excl_wage
-                    med_wages = df.iloc[i][Table.AMOUNT_COL] - med_leave_excl_wage
-                    eams_hours = total_hours - eams_excl_hour
+                # Append fields to dataframe
+                EamsNameConvention = lName.replace(' ', '-') + ', ' + fName.replace(' ', '-') + ' ' + mName
+                self.eamsReportDf.loc[len(self.eamsReportDf)] = [ssn, EamsNameConvention, lName, fName, mName, '', eams_hours, eams_wages, '']
+                self.medReportDf.loc[len(self.medReportDf)] = [ssn, lName, fName, mName, total_hours, med_wages, 'N']
 
-                    # Update total
-                    self.total_med_wages += med_wages
-                    self.total_lni_wages += df.iloc[i][Table.AMOUNT_COL]
-                    self.total_lni_hours += lni_worked_hours
-
-                    # Append fields to dataframe
-                    EamsNameConvention = lName.replace(' ', '-') + ', ' + fName.replace(' ', '-') + ' ' + mName
-                    self.eamsReportDf.loc[len(self.eamsReportDf)] = [ssn, EamsNameConvention, lName, fName, mName, '', eams_hours, eams_wages, '']
-                    self.medReportDf.loc[len(self.medReportDf)] = [ssn, lName, fName, mName, total_hours, med_wages, 'N']
-
-                i+=1
+            i+=1
 
     def contains(self, s, items):
         for item in items:
