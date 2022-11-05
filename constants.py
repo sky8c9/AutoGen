@@ -1,5 +1,4 @@
 class Table:
-    TABLE_LOC = ['50, 690, 690, 50']
     INFO_COL = 0
     PAYROLL_ITEM_COL = 1
     HOUR_COL = 2
