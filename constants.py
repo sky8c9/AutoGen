@@ -3,6 +3,7 @@ class Table:
     PAYROLL_ITEM_COL = 1
     HOUR_COL = 2
     AMOUNT_COL = 3 
+    SOC_COL = 4
 
 class KeyWord:
     EMPLOYEE_SEPARATOR = 'Total'
@@ -15,7 +16,7 @@ class MedLeaveReport:
     MED_LEAVE_RATE = 0.006
 
 class EamsReport:
-    COL_LABELS = ['SSN', 'EamsNameConvention', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'Hours', 'Wages', 'SOC']
+    COL_LABELS = ['SSN', 'LastName', 'FirstName', 'MiddleName', 'Suffix', 'Hours', 'Wages', 'SOC']
     EXCL_LIST = ['sick']
 
 class LnIReport:

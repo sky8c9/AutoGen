@@ -39,9 +39,10 @@ class Report():
             # Process employee info
             fName, mName, lName = self.getName(df.iloc[i, Table.INFO_COL])
             ssn = df.iloc[i+1, Table.INFO_COL]
-            
+            soc = df.iloc[i+1, Table.SOC_COL]
+
             # Process payroll items
-            while(not (KeyWord.EMPLOYEE_SEPARATOR in df.iloc[i, Table.INFO_COL])): 
+            while(not (KeyWord.EMPLOYEE_SEPARATOR in df.iloc[i, Table.INFO_COL])):                
                 # Skip corporate officer salary
                 if KeyWord.OFFICER_SALARY in df.iloc[i, Table.PAYROLL_ITEM_COL]:
                     addToReport = False
@@ -62,9 +63,9 @@ class Report():
                 if self.contains(df.iloc[i, Table.PAYROLL_ITEM_COL], LnIReport.WORKED_LIST):
                     lni_worked_hours += df.iloc[i, Table.HOUR_COL]
                 
-                i+=1    
+                i+=1
 
-            if addToReport:
+            if addToReport:                
                 # Update wages and hours of current employee
                 eams_wages = df.iloc[i, Table.AMOUNT_COL] - eams_excl_wage
                 med_wages = df.iloc[i, Table.AMOUNT_COL] - med_leave_excl_wage
@@ -76,8 +77,7 @@ class Report():
                 self.total_lni_hours += lni_worked_hours
 
                 # Append fields to dataframe
-                EamsNameConvention = lName.replace(' ', '-') + ', ' + fName.replace(' ', '-') + ' ' + mName
-                self.eamsReportDf.loc[len(self.eamsReportDf)] = [ssn, EamsNameConvention, lName, fName, mName, '', eams_hours, eams_wages, '']
+                self.eamsReportDf.loc[len(self.eamsReportDf)] = [ssn, lName, fName, mName, '', eams_hours, eams_wages, soc]
                 self.medReportDf.loc[len(self.medReportDf)] = [ssn, lName, fName, mName, total_hours, med_wages, 'N']
 
             i+=1
@@ -113,7 +113,7 @@ class Report():
         # Format eams report and output csv
         self.eamsReportDf['Wages'] = self.eamsReportDf['Wages'].round(2)
         self.eamsReportDf['Hours'] = self.eamsReportDf['Hours'].apply(np.round).astype(int)
-        self.eamsReportDf[['SSN', 'EamsNameConvention', 'Hours', 'Wages']].to_csv(f'{IO.EAMS}/{self.company_name} - EAMS.csv', float_format='%.2f', header=None, index=False)
+        self.eamsReportDf.to_csv(f'{IO.EAMS}/{self.company_name} - EAMS.csv', float_format='%.2f', header=None, index=False)
 
 def createReportFolder(folders):
     for folder in folders:
