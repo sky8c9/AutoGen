@@ -1,0 +1,55 @@
+version: "3.9"
+# network
+networks:
+  tnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "192.168.99.0/24"
+
+# nginx proxy manager, frontend and backend services
+services:
+  npm:
+    stdin_open: true
+    tty: true
+    image: "jc21/nginx-proxy-manager:latest"
+    networks:
+      - tnet
+    ports:
+      - "80:80"
+      - "81:81"
+      - "443:443"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+
+  frontend:
+    stdin_open: true
+    tty: true
+    build:
+      context: ./frontend/
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./frontend/.env
+    networks:
+      - tnet
+    ports:
+      - "3000:3000"
+
+  backend:
+    stdin_open: true
+    tty: true
+    build:
+      context: ./backend/
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ${TEMPLATE_PATH}/EAMS:/app/eams_template_out
+      - ${TEMPLATE_PATH}/PFML:/app/med_template_out
+      - ${TEMPLATE_PATH}/W2:/app/w2_template_out
+      - ${TEMPLATE_PATH}/EFW2:/app/efw2_template_out
+    networks:
+      - tnet
+    ports:
+      - "8000:8000"

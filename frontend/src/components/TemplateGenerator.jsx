@@ -9,11 +9,12 @@ export default function TemplateGenerator() {
   const [fileA, setFileA] = useState();
   const [fileB, setFileB] = useState();
   const [reportList, setReportList] = useState([]);
+  const axs = axios.create({baseURL: process.env.REACT_APP_API_URL});
 
   useEffect(() => {
     const fetchReport = async () => {
       try {
-        const res = await axios.get("/report");
+        const res = await axs.get("/report");
         setReportList(res.data);
       } catch (e) {
         console.log(e.response);
@@ -34,7 +35,7 @@ export default function TemplateGenerator() {
         form.append("fileA", fileA);
         form.append("fileB", fileB);
     
-        axios
+        axs
         .post("/generator", form)
         .then(res => {
             setErr(false);

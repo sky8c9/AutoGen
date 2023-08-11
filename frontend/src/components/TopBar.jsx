@@ -5,11 +5,12 @@ import axios from 'axios';
 export default function TopBar() {
   const { setIdx } = useContext(EntitySelectContext);
   const [entityList, setEntityList] = useState([]);
+  const axs = axios.create({baseURL: process.env.REACT_APP_API_URL});
 
   useEffect(() => {
     const fetchEntity = async () => {
       try {
-        const res = await axios.get("/entity");
+        const res = await axs.get("/entity");
         setEntityList(res.data);
       } catch (e) {
         console.log(e.response);
