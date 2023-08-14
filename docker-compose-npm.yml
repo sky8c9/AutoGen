@@ -7,14 +7,20 @@ networks:
       config:
         - subnet: "192.168.99.0/24"
 
+x-common-fields: &common-fields
+  stdin_open: true
+  tty: true
+  networks:
+    - tnet
+  security_opt:
+    - no-new-privileges:true
+  restart: always
+
 # nginx proxy manager, frontend and backend services
 services:
   npm:
-    stdin_open: true
-    tty: true
+    <<: *common-fields
     image: "jc21/nginx-proxy-manager:latest"
-    networks:
-      - tnet
     ports:
       - "80:80"
       - "81:81"
@@ -24,21 +30,15 @@ services:
       - ./letsencrypt:/etc/letsencrypt
 
   frontend:
-    stdin_open: true
-    tty: true
+    <<: *common-fields
     build:
       context: ./frontend/
       dockerfile: ./Dockerfile
     env_file:
       - ./frontend/.env
-    networks:
-      - tnet
-    ports:
-      - "3000:3000"
 
   backend:
-    stdin_open: true
-    tty: true
+    <<: *common-fields
     build:
       context: ./backend/
       dockerfile: ./Dockerfile
@@ -49,7 +49,3 @@ services:
       - ${TEMPLATE_PATH}/PFML:/app/med_template_out
       - ${TEMPLATE_PATH}/W2:/app/w2_template_out
       - ${TEMPLATE_PATH}/EFW2:/app/efw2_template_out
-    networks:
-      - tnet
-    ports:
-      - "8000:8000"

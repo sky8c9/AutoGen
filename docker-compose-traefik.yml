@@ -1,0 +1,100 @@
+version: "3.9"
+networks:
+  default:
+    driver: bridge
+  tnet:
+    name: tnet
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.90.0/24
+
+x-common-fields: &common-fields
+  stdin_open: true
+  tty: true
+  networks:
+    - tnet
+  security_opt:
+    - no-new-privileges:true
+  restart: always
+
+# traefik, frontend and backend services
+services:
+  traefik:
+    <<: *common-fields
+    image: "traefik:2.9"
+    command:
+      - --api=true
+      - --api.dashboard=true
+
+      - --log=true
+      - --log.filePath=/logs/traefik.log
+      - --log.level=INFO
+
+      - --accessLog=true
+      - --accessLog.filePath=/logs/access.log
+
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+
+      - --certificatesResolvers.le.acme.email=${EMAIL}
+      - --certificatesResolvers.le.acme.storage=/traefik-letsencrypt/acme.json
+      - --certificatesResolvers.le.acme.dnsChallenge.provider=duckdns
+      - --certificatesResolvers.le.acme.dnsChallenge.resolvers=1.1.1.1:53,1.0.0.1:53
+      - --certificatesResolvers.le.acme.dnsChallenge.delayBeforeCheck=60
+
+      - --entryPoints.web.address=:80
+      - --entryPoints.web-secure.address=:443
+      - --entryPoints.web.http.redirections.entryPoint.to=web-secure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entryPoint.permanent=true
+
+      - --entryPoints.web-secure.http.tls.domains[0].main=${DOMAIN}
+      - --entryPoints.web-secure.http.tls.domains[0].sans=*.${DOMAIN}
+      - --entryPoints.web-secure.http.tls.certresolver=le
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DUCKDNS_TOKEN=${TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik-letsencrypt:/traefik-letsencrypt
+      - ./traefik-logs:/logs
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tf-rtr.entryPoints=web-secure
+      - traefik.http.routers.tf-rtr.rule=Host(`traefik.${DOMAIN}`)
+      - traefik.http.routers.tf-rtr.service=api@internal
+
+  frontend:
+    <<: *common-fields
+    build:
+      context: ./frontend/
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./frontend/.env
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ui-rtr.entryPoints=web-secure
+      - traefik.http.routers.ui-rtr.rule=Host(`ui.${DOMAIN}`)
+      - traefik.http.services.ui-svc.loadbalancer.server.port=3000
+
+  backend:
+    <<: *common-fields
+    build:
+      context: ./backend/
+      dockerfile: ./Dockerfile
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ${TEMPLATE_PATH}/EAMS:/app/eams_template_out
+      - ${TEMPLATE_PATH}/PFML:/app/med_template_out
+      - ${TEMPLATE_PATH}/W2:/app/w2_template_out
+      - ${TEMPLATE_PATH}/EFW2:/app/efw2_template_out
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.api-rtr.entryPoints=web-secure
+      - traefik.http.routers.api-rtr.rule=Host(`api.${DOMAIN}`)
+      - traefik.http.services.api-svc.loadbalancer.server.port=8000
+
