@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useContext} from 'react';
 import { EntitySelectContext } from '../contexts/EntitySelectContext';
+import { Link } from "react-router-dom";
 import axios from 'axios';
 
 export default function TopBar() {
@@ -27,16 +28,10 @@ export default function TopBar() {
           <div class="collapse navbar-collapse" id="navbarText">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0 fs-4">
               <li class="nav-item">
-                <a class="nav-link active" aria-current="page" href="#">AutoGen</a>
+                <Link class="nav-link" to="/gen">AutoGen</Link>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="#">AutoFill</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">AutoPay</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#">TaxUtil</a>
+                <Link class="nav-link" to="/util">TaxUtil</Link>
               </li>
             </ul>
 

@@ -1,14 +1,16 @@
 import React, {useState, useEffect, useContext} from 'react';
+import ReportSummary from './ReportSummary';
 import { EntitySelectContext } from '../contexts/EntitySelectContext';
-
+import { ReportSummaryContext } from '../contexts/ReportSummaryContext';
 import axios from 'axios';
 
 export default function TemplateGenerator() {
   const { idx, setMessage, setErr } = useContext(EntitySelectContext);
   const [reportType, setReportType] = useState("");
+  const [reportList, setReportList] = useState([]);
   const [fileA, setFileA] = useState();
   const [fileB, setFileB] = useState();
-  const [reportList, setReportList] = useState([]);
+  const [summary, setSummary] = useState({});
   const axs = axios.create({baseURL: process.env.REACT_APP_API_URL});
 
   useEffect(() => {
@@ -39,10 +41,12 @@ export default function TemplateGenerator() {
         .post("/generator", form)
         .then(res => {
             setErr(false);
-            setMessage("Template files are ready!!!")
-            console.log(res);
+            setMessage("Template files are ready!!!");
+            setSummary(res.data);
         })
         .catch(e => {
+            setErr(true);
+            setMessage("Input file format error!!!");
             console.error(e);
         });
     } else {
@@ -86,8 +90,14 @@ export default function TemplateGenerator() {
             </div>
         </div>
 
-        <div class="d-grid gap-2 col-2 mx-auto">
+        <div class="d-grid gap-2 col-2 mx-auto p-2">
             <button type="submit" class="btn btn-outline-primary btn-lg" onClick={runHandler}>Run</button>
+        </div>
+
+        <div class="row align-items-center p-5">
+            <ReportSummaryContext.Provider value={{summary}}>
+                <ReportSummary />
+            </ReportSummaryContext.Provider>
         </div>
     </div>
   );
