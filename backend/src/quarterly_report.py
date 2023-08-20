@@ -1,8 +1,7 @@
-import os, shutil
+import os
 import numpy as np
 import pandas as pd
 from constants import EarningSummary, PFMLTemplate, EAMSTemplate
-from collections import defaultdict
 from report import Report
 
 class QuarterlyReport(Report):
@@ -15,18 +14,21 @@ class QuarterlyReport(Report):
         self.total_lni_wage = 0
         self.total_lni_hour = 0
 
+        # earning summary records
+        self.eams_employee_record = dict()
+        self.pfml_employee_record = dict()
+
     def run(self):
         super().run()
 
         # summary report
-        pfml_tax = f'Med Pay: ${round(self.total_med_wage * PFMLTemplate.PFML_TAX_RATE, 2)}\n'
+        pfml_tax = f'Med Pay: ${round(self.total_med_wage * PFMLTemplate.PFML_TAX_RATE, 2)}\n' if (len(self.pfml_employee_record) >= PFMLTemplate.EMPLOYEE_SIZE_THRESHOLD) else f'Med Pay: ${round(self.total_med_wage * PFMLTemplate.PFML_TAX_RATE * (1 - PFMLTemplate.EMPLOYER_SHARE), 2)}\n'
         cares_fund_tax = f'Cares Fund: ${round(self.total_care_wage * PFMLTemplate.CARES_FUND_TAX_RATE, 2)}\n'
         lni_wage = f'Total LnI Wage: ${round(self.total_lni_wage)}\n'
         lni_hour = f'Total LnI Hour: {round(self.total_lni_hour)}\n'
         summary_txt = '\n'.join([pfml_tax, cares_fund_tax, lni_wage, lni_hour])
 
-        print(summary_txt)
-        return summary_txt
+        return {'TXT': summary_txt, 'EAMS': self.eams_employee_record.values(), 'PFML': self.pfml_employee_record.values()}
     
     def contains(self, s, items):
         for item in items:
@@ -35,14 +37,13 @@ class QuarterlyReport(Report):
         return False
     
     def genTemplate(self):
-        eams_record, pfml_record = self.processEmployeeRecord()
-
         ein, legal_name, dba, address, contact = self.entity
         eams_oname = f'eams_{legal_name}({dba})_filled'
         pfml_oname = f'pfml_{legal_name}({dba})_filled'
 
-        self.createTemplate(eams_oname, EAMSTemplate, eams_record)
-        self.createTemplate(pfml_oname, PFMLTemplate, pfml_record)
+        self.processEmployeeRecord()
+        self.createTemplate(eams_oname, EAMSTemplate, self.eams_employee_record)
+        self.createTemplate(pfml_oname, PFMLTemplate, self.pfml_employee_record)
 
     def createTemplate(self, oname, template_cls, employee_record):
         if not os.path.exists(template_cls.OUTPUT_FOLDER):
@@ -59,7 +60,7 @@ class QuarterlyReport(Report):
         for record in records: 
             ssn, first_name, middle_initial, last_name, dob, title, pfml_exempt, addr1, addr2, city, state, zip = record
             eams_info_payload = [ssn, last_name, first_name, middle_initial, '', title]
-            pfml_info_payload = [ssn, last_name, first_name, middle_initial, dob, pfml_exempt]
+            pfml_info_payload = [ssn, last_name, first_name, middle_initial, pfml_exempt, dob]
 
             info = dict()
             info[EAMSTemplate.ID] = eams_info_payload
@@ -82,14 +83,15 @@ class QuarterlyReport(Report):
             eams_excl_hour = 0
             lni_worked_hours = 0
             total_hours = 0
-            addToReport = True
+            flag = True
 
             # Process payroll items
             ssn = info[i].split(' ')[-1]
             while(not (EarningSummary.EMPLOYEE_SEPARATOR in info[i])):                
-                # Exempt earning list
-                if self.contains(payroll_item[i], EarningSummary.EARNING_EXEMPT_LIST):
-                    addToReport = False
+                # Other non tracking earning type
+                if self.contains(payroll_item[i], EarningSummary.OTHER_LIST):
+                    flag = False
+                    total_hours += EarningSummary.FIXED_HOUR
 
                 # PFML excluding list running sum
                 if self.contains(payroll_item[i], PFMLTemplate.EXCL_LIST):
@@ -109,54 +111,46 @@ class QuarterlyReport(Report):
 
                 i+=1
             
-            if addToReport:                
-                # Update wages and hours of current employee
-                eams_wages = wage[i] - eams_excl_wage
-                med_wages = wage[i] - med_leave_excl_wage
-                eams_hours = total_hours - eams_excl_hour
+            # PFML & Cares fund report
+            med_wages = wage[i] - med_leave_excl_wage
+            self.total_med_wage += med_wages
+            exempt_status = self.employee_info[ssn][PFMLTemplate.ID][4]
+            if exempt_status == 'N':
+                self.total_care_wage += med_wages           
+            pfml_earning_payload = [round(total_hours), '{:.2f}'.format(med_wages)]
 
-                # Update total
-                self.total_med_wage += med_wages
-                self.total_lni_wage += wage[i]
-                self.total_lni_hour += lni_worked_hours
+            # EAMS report
+            eams_wages = wage[i] - eams_excl_wage
+            eams_hours = total_hours - eams_excl_hour
+            eams_earning_payload = [round(eams_hours), '{:.2f}'.format(eams_wages)] if flag else None
+            
+            # LnI report
+            self.total_lni_wage += wage[i] if flag else 0
+            self.total_lni_hour += lni_worked_hours if flag else 0
 
-                # Update cares fund total
-                exempt_col_idx = 5 # defined in employee info payload
-                exempt_status = self.employee_info[ssn][PFMLTemplate.ID][exempt_col_idx]
-                if exempt_status == 'N':
-                    self.total_care_wage += med_wages
-
-                # store employee earning
-                pfml_earning_payload = [round(total_hours), '{:.2f}'.format(med_wages)]
-                eams_earning_payload = [round(eams_hours), '{:.2f}'.format(eams_wages)]
-
-                earning = dict()
-                earning[EAMSTemplate.ID] = eams_earning_payload
-                earning[PFMLTemplate.ID] = pfml_earning_payload
-                self.employee_earning[ssn] = earning
-
+            # Add to earning Summary
+            earning = dict()
+            earning[PFMLTemplate.ID] = pfml_earning_payload
+            earning[EAMSTemplate.ID] = eams_earning_payload
+            self.employee_earning[ssn] = earning         
+          
             i+=1
 
     def processEmployeeRecord(self):
         eams_employee_record_len = len(EAMSTemplate.COL_TITLE)
         pfml_employee_record_len = len(PFMLTemplate.COL_TITLE)
-        eams_employee_record = dict()
-        pfml_employee_record = dict()
 
         # process employee
         for ssn in self.employee_earning:
-            eams_employee_record[ssn] = np.empty(eams_employee_record_len, dtype=object)
-            pfml_employee_record[ssn] = np.empty(pfml_employee_record_len, dtype=object)
-
-            # set employee info
-            np.put(eams_employee_record[ssn], EAMSTemplate.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][EAMSTemplate.ID])
-            np.put(pfml_employee_record[ssn], PFMLTemplate.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][PFMLTemplate.ID])
-
-            # set employee earning
-            np.put(eams_employee_record[ssn], EAMSTemplate.EARNING_SUMMARY_INDICES, self.employee_earning[ssn][EAMSTemplate.ID])
-            np.put(pfml_employee_record[ssn], PFMLTemplate.EARNING_SUMMARY_INDICES, self.employee_earning[ssn][PFMLTemplate.ID])
-
-        return eams_employee_record, pfml_employee_record
+            # set employee info & earning
+            if self.employee_earning[ssn][EAMSTemplate.ID]:
+                self.eams_employee_record[ssn] = np.empty(eams_employee_record_len, dtype=object)
+                np.put(self.eams_employee_record[ssn], EAMSTemplate.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][EAMSTemplate.ID])
+                np.put(self.eams_employee_record[ssn], EAMSTemplate.EARNING_SUMMARY_INDICES, self.employee_earning[ssn][EAMSTemplate.ID])
+            if self.employee_earning[ssn][PFMLTemplate.ID]:
+                self.pfml_employee_record[ssn] = np.empty(pfml_employee_record_len, dtype=object)
+                np.put(self.pfml_employee_record[ssn], PFMLTemplate.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][PFMLTemplate.ID])
+                np.put(self.pfml_employee_record[ssn], PFMLTemplate.EARNING_SUMMARY_INDICES, self.employee_earning[ssn][PFMLTemplate.ID])
 
 if __name__ == "__main__":
     # quick test goes here

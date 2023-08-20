@@ -8,7 +8,10 @@ class EarningSummary:
     EMPLOYEE_SEPARATOR = 'Total'
     HOURLY = 'hourly'
     WORKED_LIST = ['overtime', 'wage']
-    EARNING_EXEMPT_LIST = ['salary']
+    OTHER_LIST = ['salary']
+
+    # Fixed hour 
+    FIXED_HOUR = 480
 
 class EntityDataSource:
     # Entity list
@@ -62,14 +65,16 @@ class PFMLTemplate(Template):
     ID = 'PFML'
     OUTPUT_FOLDER = '../med_template_out'
 
+    EMPLOYER_SHARE = 0.2724
+    EMPLOYEE_SIZE_THRESHOLD = 50
     PFML_TAX_RATE = 0.008
     CARES_FUND_TAX_RATE = 0.0058
 
-    COL_TITLE = ['SSN', 'LastName', 'FirstName', 'MiddleInitial', 'DoB', 'Hours', 'Wages', 'WACaresExempt(Y/N)']
+    COL_TITLE = ['SSN', 'LastName', 'FirstName', 'MiddleInitial', 'Hours', 'Wages', 'WACaresExempt(Y/N)', 'DOB']
     EXCL_LIST = ['tip']
 
-    EMPLOYEE_INFO_INDICES = [0, 1, 2, 3, 4, 7]
-    EARNING_SUMMARY_INDICES = [5, 6]
+    EMPLOYEE_INFO_INDICES = [0, 1, 2, 3, 6, 7]
+    EARNING_SUMMARY_INDICES = [4, 5]
 
 class EAMSTemplate(Template):
     # SSN, LastName, FirstName, MiddleName, Suffix, Hours, Wages

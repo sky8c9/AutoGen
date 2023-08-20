@@ -4,11 +4,10 @@ import pandas as pd
 
 from fastapi import APIRouter, UploadFile, File, Form
 from typing import Annotated
-
 from w2_report import W2Report
 from  quarterly_report import QuarterlyReport
-from constants import EntityDataSource
-from models import Entity, UsrSelect
+from constants import EntityDataSource, PFMLTemplate, EAMSTemplate
+from models import Entity, UsrSelect, Report
 from enum import Enum
 
 class FakeDb:
@@ -20,7 +19,7 @@ class FakeDb:
 
     def getEntityList(self):
         # read entity data source file
-        df = pd.read_excel('../template/941_data_template.xlsx').to_numpy()
+        df = pd.read_excel("../template/941_data_template.xlsx").to_numpy()
 
         # preprocess data if needed - delete this part if data already in the right format
         _, entity_payload, _ = np.hsplit(df, EntityDataSource.SPLIT_INDICES)
@@ -75,16 +74,16 @@ async def createTemplate(
         contentsB = await fileB.read()
 
         # write content of uploaded files to temp directory
-        with open(td1.name, 'wb') as writer:
+        with open(td1.name, "wb") as writer:
             writer.write(contentsA)
         
-        with open(td2.name, 'wb') as writer:
+        with open(td2.name, "wb") as writer:
             writer.write(contentsB)
 
         # run template generator
         entity = db.getEntity(idx)
         report = globals()[report]
-        report(entity, td1, td2).run()
+        res = report(entity, td1, td2).run()
 
         # remove temp directory
         td1.close()
@@ -92,3 +91,16 @@ async def createTemplate(
 
         td2.close()
         os.unlink(td2.name)
+
+        # construct a report summary response - weird bug with numpy so using python list instead
+        eams_report = Report(
+            header = EAMSTemplate.COL_TITLE,
+            entries = [item.tolist() for item in res["EAMS"]]
+        )
+
+        pfml_report = Report(
+            header = PFMLTemplate.COL_TITLE,
+            entries = [item.tolist() for item in res["PFML"]] 
+        )
+
+        return {"TXT": res["TXT"], "EAMS": eams_report, "PFML": pfml_report}
