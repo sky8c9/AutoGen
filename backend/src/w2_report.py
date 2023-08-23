@@ -8,20 +8,42 @@ from report import Report
 class W2Report(Report):
     def __init__(self, entity, info_file, earning_file):
         super().__init__(entity, info_file, earning_file)
-  
+
+        self.w2_employee_record = dict()
+        self.efw2_employee_record = dict()
+
+        self.w2_employer_record = None
+        self.efw2_employer_record = None
+
+    def run(self):
+        super().run()
+        
+        # create report - convert dict values to list
+        w2_record = [entry.tolist() for entry in self.w2_employee_record.values()] 
+        w2_col_titles = self.getRecordTitle(W2Template.TEMPLATE_FILE, W2Template.EMPLOYEE_SHEET)
+
+        efw2_record = [entry.tolist() for entry in self.efw2_employee_record.values()]
+        efw2_col_titles = self.getRecordTitle(EFW2Template.TEMPLATE_FILE, EFW2Template.EMPLOYEE_SHEET)
+
+        return self.createSummary('W2 Templates', [w2_col_titles, efw2_col_titles], [w2_record, efw2_record])
+
     def getRecordLength(self, template, sheet):
         return len(pd.read_excel(template, sheet_name=sheet).columns)
     
+    def getRecordTitle(self, template, sheet):
+        df = pd.read_excel(template, sheet)
+        return list(df.head())
+    
     def genTemplate(self):
-        w2_employees_record, efw2_employees_record = self.processEmployeeRecord()
-        w2_employer_record, efw2_employer_record = self.processEmployerRecord()
+        self.processEmployeeRecord()
+        self.processEmployerRecord()
         
         ein, legal_name, dba, address, contact = self.entity
         w2_oname = f'w2_{legal_name}({dba})_filled'
         efw2_oname = f'efw2_{legal_name}({dba})_filled'
 
-        self.createTemplate(w2_oname, W2Template, w2_employees_record, w2_employer_record)
-        self.createTemplate(efw2_oname, EFW2Template, efw2_employees_record, efw2_employer_record)
+        self.createTemplate(w2_oname, W2Template, self.w2_employee_record, self.w2_employer_record)
+        self.createTemplate(efw2_oname, EFW2Template, self.efw2_employee_record, self.efw2_employer_record)
 
     def createTemplate(self, oname, template_cls, employees_record, employer_record):
         if not os.path.exists(template_cls.OUTPUT_FOLDER):
@@ -43,9 +65,9 @@ class W2Report(Report):
         # w2 employer record 
         w2_info = '\n'.join([legal_name, address])
         w2_employer_record_len = self.getRecordLength(W2Template.TEMPLATE_FILE, W2Template.EMPLOYER_SHEET)
-        w2_employer_record= np.empty(w2_employer_record_len, dtype=object)
+        self.w2_employer_record= np.empty(w2_employer_record_len, dtype=object)
         w2_employer_payload = [ein, w2_info]
-        np.put(w2_employer_record, W2Template.EMPLOYER_INFO_INDICES, w2_employer_payload)
+        np.put(self.w2_employer_record, W2Template.EMPLOYER_INFO_INDICES, w2_employer_payload)
 
         # efw2 employer record        
         efw2_ein = ''.join(ein.split('-'))
@@ -53,11 +75,9 @@ class W2Report(Report):
         contact_name, _, contact_phone = contact.split(', ')
         contact_phone = ''.join(contact_phone.split('-'))
         efw2_employer_record_len = self.getRecordLength(EFW2Template.TEMPLATE_FILE, EFW2Template.EMPLOYER_SHEET)
-        efw2_employer_record = np.empty(efw2_employer_record_len, dtype=object)
+        self.efw2_employer_record = np.empty(efw2_employer_record_len, dtype=object)
         efw2_employer_payload = ['RE', EFW2Template.TAX_YEAR, efw2_ein, 0, legal_name, location, city, state, zip, 'N', 'R', contact_name, contact_phone]
-        np.put(efw2_employer_record, EFW2Template.EMPLOYER_INFO_INDICES, efw2_employer_payload)
-
-        return w2_employer_record, efw2_employer_record
+        np.put(self.efw2_employer_record, EFW2Template.EMPLOYER_INFO_INDICES, efw2_employer_payload)
     
     def getEmployeeInfo(self):
         # create & store employee info dictionary for w2_template & efw2_template
@@ -122,26 +142,22 @@ class W2Report(Report):
     def processEmployeeRecord(self):
         w2_employee_record_len = self.getRecordLength(W2Template.TEMPLATE_FILE, W2Template.EMPLOYEE_SHEET)
         efw2_employee_record_len = self.getRecordLength(EFW2Template.TEMPLATE_FILE, EFW2Template.EMPLOYEE_SHEET)
-        w2_employee_record = dict()
-        efw2_employee_record = dict()
-
+       
         # process employee
         for ssn in self.employee_earning:
-            w2_employee_record[ssn] = np.empty(w2_employee_record_len, dtype=object)
-            efw2_employee_record[ssn] = np.empty(efw2_employee_record_len, dtype=object)
+            self.w2_employee_record[ssn] = np.empty(w2_employee_record_len, dtype=object)
+            self.efw2_employee_record[ssn] = np.empty(efw2_employee_record_len, dtype=object)
 
             # set employee info
-            np.put(w2_employee_record[ssn], W2Template.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][W2Template.ID])
-            np.put(efw2_employee_record[ssn], EFW2Template.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][EFW2Template.ID])
+            np.put(self.w2_employee_record[ssn], W2Template.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][W2Template.ID])
+            np.put(self.efw2_employee_record[ssn], EFW2Template.EMPLOYEE_INFO_INDICES, self.employee_info[ssn][EFW2Template.ID])
 
             # set employee earning
             earning_payload, fed_payload = self.computeYearlyEarning(ssn)
-            np.put(w2_employee_record[ssn], W2Template.EARNING_SUMMARY_INDICES, earning_payload)
-            np.put(w2_employee_record[ssn], W2Template.FED_TAX_INDICES, fed_payload)
-            np.put(efw2_employee_record[ssn], EFW2Template.EARNING_SUMMARY_INDICES, earning_payload)
-            np.put(efw2_employee_record[ssn], EFW2Template.FED_TAX_INDICES, fed_payload)
-
-        return w2_employee_record, efw2_employee_record
+            np.put(self.w2_employee_record[ssn], W2Template.EARNING_SUMMARY_INDICES, earning_payload)
+            np.put(self.w2_employee_record[ssn], W2Template.FED_TAX_INDICES, fed_payload)
+            np.put(self.efw2_employee_record[ssn], EFW2Template.EARNING_SUMMARY_INDICES, earning_payload)
+            np.put(self.efw2_employee_record[ssn], EFW2Template.FED_TAX_INDICES, fed_payload)
 
 if __name__ == "__main__":
     # quick test goes here

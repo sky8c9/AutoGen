@@ -94,11 +94,9 @@ export default function TemplateGenerator() {
             <button type="submit" class="btn btn-outline-primary btn-lg" onClick={runHandler}>Run</button>
         </div>
 
-        <div class="row align-items-center p-5">
-            <ReportSummaryContext.Provider value={{summary}}>
-                <ReportSummary />
-            </ReportSummaryContext.Provider>
-        </div>
+        <ReportSummaryContext.Provider value={{summary}}>
+            <ReportSummary />
+        </ReportSummaryContext.Provider>
     </div>
   );
 }

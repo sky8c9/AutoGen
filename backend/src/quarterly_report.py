@@ -28,7 +28,10 @@ class QuarterlyReport(Report):
         lni_hour = f'Total LnI Hour: {round(self.total_lni_hour)}\n'
         summary_txt = '\n'.join([pfml_tax, cares_fund_tax, lni_wage, lni_hour])
 
-        return {'TXT': summary_txt, 'EAMS': self.eams_employee_record.values(), 'PFML': self.pfml_employee_record.values()}
+        # create report - convert dict values to list
+        eams_record = [entry.tolist() for entry in self.eams_employee_record.values()] 
+        pfml_record = [entry.tolist() for entry in self.pfml_employee_record.values()]
+        return self.createSummary(summary_txt, [EAMSTemplate.COL_TITLE, PFMLTemplate.COL_TITLE], [eams_record, pfml_record])
     
     def contains(self, s, items):
         for item in items:

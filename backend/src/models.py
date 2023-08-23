@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from fastapi import UploadFile
-from typing import List
+from typing import List, Optional
 
 class Entity(BaseModel):
     ein: str
@@ -15,6 +15,7 @@ class UsrSelect(BaseModel):
     fileA: UploadFile
     fileB: UploadFile
 
-class Report(BaseModel):
-    header: List[str]
-    entries: List[List[str]]
+class Summary(BaseModel):
+    descr: str
+    headers: List[List[Optional[str]]]
+    entries: List[List[List[Optional[str]]]]

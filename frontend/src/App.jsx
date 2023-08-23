@@ -18,6 +18,7 @@ function App() {
         {message ? <Alert /> : <></>}
         <Routes>
           <Route path="/" element={<MainLayout />}>
+            <Route index="/gen" element={<TemplateGenerator />} />
             <Route path="/gen" element={<TemplateGenerator />} />
             <Route path="/util" element={<TaxUtil />} />
           </Route>

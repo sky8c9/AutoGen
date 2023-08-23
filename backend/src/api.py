@@ -6,8 +6,8 @@ from fastapi import APIRouter, UploadFile, File, Form
 from typing import Annotated
 from w2_report import W2Report
 from  quarterly_report import QuarterlyReport
-from constants import EntityDataSource, PFMLTemplate, EAMSTemplate
-from models import Entity, UsrSelect, Report
+from constants import EntityDataSource, PFMLTemplate, EAMSTemplate, W2Template
+from models import Entity, UsrSelect
 from enum import Enum
 
 class FakeDb:
@@ -46,7 +46,7 @@ class FakeDb:
 class ReportType(Enum):
     w2 = "W2Report"
     quarterly = "QuarterlyReport"
-
+    
 db = FakeDb()
 entity_list = db.getEntityList()
 web = APIRouter()
@@ -82,8 +82,8 @@ async def createTemplate(
 
         # run template generator
         entity = db.getEntity(idx)
-        report = globals()[report]
-        res = report(entity, td1, td2).run()
+        reportCls = globals()[report]
+        res = reportCls(entity, td1, td2).run()
 
         # remove temp directory
         td1.close()
@@ -92,15 +92,5 @@ async def createTemplate(
         td2.close()
         os.unlink(td2.name)
 
-        # construct a report summary response - weird bug with numpy so using python list instead
-        eams_report = Report(
-            header = EAMSTemplate.COL_TITLE,
-            entries = [item.tolist() for item in res["EAMS"]]
-        )
-
-        pfml_report = Report(
-            header = PFMLTemplate.COL_TITLE,
-            entries = [item.tolist() for item in res["PFML"]] 
-        )
-
-        return {"TXT": res["TXT"], "EAMS": eams_report, "PFML": pfml_report}
+        # return response
+        return res.dict()

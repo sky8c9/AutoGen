@@ -1,6 +1,6 @@
 import pandas as pd
-
 from abc import abstractclassmethod
+from models import Summary
 
 class Report():
     def __init__(self, entity, info_file, earning_file):
@@ -18,6 +18,17 @@ class Report():
         self.getEmployeeInfo()  
         self.getEmployeeEarning()
         self.genTemplate()
+
+    def createSummary(self, descr, headers, entries):
+        # create summary
+        return Summary (
+            descr = descr,
+            headers = headers,
+            entries = entries
+        )
+    
+        # add to db
+        # Todo
 
     def appendToFile(self, ofile, data_frame, sheet, start_index):
         with pd.ExcelWriter(ofile, mode='a', if_sheet_exists='overlay') as writer:
