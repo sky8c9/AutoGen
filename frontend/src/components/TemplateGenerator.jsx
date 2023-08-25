@@ -21,7 +21,7 @@ export default function TemplateGenerator() {
       } catch (e) {
         console.log(e.response);
       }
-    }
+    };
   
     fetchReport();
   }, []);
@@ -60,6 +60,7 @@ export default function TemplateGenerator() {
   };
 
   return (
+    <>
     <div class="container text-center">
         <div class="col align-items-center p-2">
             <div class="btn-group" role="group" aria-label="Basic radio toggle button group">
@@ -93,10 +94,11 @@ export default function TemplateGenerator() {
         <div class="d-grid gap-2 col-2 mx-auto p-2">
             <button type="submit" class="btn btn-outline-primary btn-lg" onClick={runHandler}>Run</button>
         </div>
-
-        <ReportSummaryContext.Provider value={{summary}}>
-            <ReportSummary />
-        </ReportSummaryContext.Provider>
     </div>
+
+    <ReportSummaryContext.Provider value={{summary}}>
+        <ReportSummary />
+    </ReportSummaryContext.Provider>
+    </>
   );
 }

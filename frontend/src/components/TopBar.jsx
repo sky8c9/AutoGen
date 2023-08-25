@@ -4,8 +4,7 @@ import { Link } from "react-router-dom";
 import axios from 'axios';
 
 export default function TopBar() {
-  const { setIdx } = useContext(EntitySelectContext);
-  const [entityList, setEntityList] = useState([]);
+  const { entityList, setIdx, setEntityList } = useContext(EntitySelectContext);
   const axs = axios.create({baseURL: process.env.REACT_APP_API_URL});
 
   useEffect(() => {
@@ -16,9 +15,9 @@ export default function TopBar() {
       } catch (e) {
         console.log(e.response);
       }
-    }
+    };
   
-    fetchEntity()
+    fetchEntity();
   }, []);
 
   return (

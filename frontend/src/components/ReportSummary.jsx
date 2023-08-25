@@ -5,14 +5,14 @@ export default function ReportSummary() {
   const { summary } = useContext(ReportSummaryContext);
 
   return (
-    <div class="row justify-content-center p-5"> 
+    <div class="row justify-content-center text-center text-nowrap p-5"> 
         {Object.keys(summary).length !== 0 &&
         <>
-            <h5>Summary</h5>
-            {summary.descr && summary.descr.split('\n').map(val => <h6>{val}</h6>)}
+            <h1>Summary</h1>
+            {summary.descr && summary.descr.split('\n').map(val => <h4>{val}</h4>)}
             {summary.headers && summary.headers.map((titles, idx) =>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped align-middle text-nowrap">
+                    <table class="table table-bordered table-striped">
                         <thead>
                             <tr>
                                 <th scope="col">#</th>

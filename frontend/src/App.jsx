@@ -8,13 +8,14 @@ import MainLayout from './components/MainLayout';
 import { EntitySelectContext } from './contexts/EntitySelectContext';
 
 function App() {
+  const [entityList, setEntityList] = useState([]);
   const [idx, setIdx] = useState("0");
   const [message, setMessage] = useState("");
   const [err, setErr] = useState(false);
 
   return (
     <BrowserRouter>
-      <EntitySelectContext.Provider value={{idx, err, message, setIdx, setMessage, setErr}}>
+      <EntitySelectContext.Provider value={{entityList, idx, err, message, setEntityList, setIdx, setMessage, setErr}}>
         {message ? <Alert /> : <></>}
         <Routes>
           <Route path="/" element={<MainLayout />}>
