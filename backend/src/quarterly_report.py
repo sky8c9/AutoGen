@@ -53,15 +53,17 @@ class QuarterlyReport(Report):
             os.makedirs(template_cls.OUTPUT_FOLDER)
 
         # write employee data to an empty template file
-        ofile = f'{template_cls.OUTPUT_FOLDER}/{oname}_template.xlsx'
-        employee_df = pd.DataFrame(employee_record.values())
-        self.writeToFile(ofile, employee_df)
+        ofile = f'{template_cls.OUTPUT_FOLDER}/{oname}_template.CSV'
+        employee_df = pd.DataFrame(employee_record.values(), columns=template_cls.COL_TITLE)
+        self.toCSV(ofile, employee_df)
 
     def getEmployeeInfo(self):
         # create & store employee info dictionary for eams template & pfml template
         records = pd.read_csv(self.info_file).fillna('').astype(str).to_numpy()
         for record in records: 
             ssn, first_name, middle_initial, last_name, dob, title, pfml_exempt, addr1, addr2, city, state, zip = record
+            middle_initial = middle_initial[0] if len(middle_initial) > 0 else ''
+
             eams_info_payload = [ssn, last_name, first_name, middle_initial, '', title]
             pfml_info_payload = [ssn, last_name, first_name, middle_initial, pfml_exempt, dob]
 

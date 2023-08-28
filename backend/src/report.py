@@ -38,6 +38,9 @@ class Report():
         with pd.ExcelWriter(ofile) as writer:
             data_frame.to_excel(writer, header=None, index=False)
 
+    def toCSV(self, ofile, data_frame):
+        data_frame.to_csv(ofile, index=False)
+
     @abstractclassmethod
     def getEmployeeInfo(self):
         pass

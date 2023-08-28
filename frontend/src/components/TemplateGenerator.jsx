@@ -30,7 +30,7 @@ export default function TemplateGenerator() {
     setErr(false);
     setMessage("");
 
-    if (reportType != "" && fileA && fileB) {
+    if (reportType !== "" && fileA && fileB) {
         const form = new FormData();
         form.append("idx", idx);
         form.append("report", reportType);
@@ -51,7 +51,7 @@ export default function TemplateGenerator() {
         });
     } else {
         setErr(true);
-        if (reportType == "") {
+        if (reportType === "") {
             setMessage("Report type is not selected!!!");
         } else {
             setMessage("One of the uploaded file is empty!!!");

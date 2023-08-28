@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useContext} from 'react';
+import React, {useEffect, useContext} from 'react';
 import { EntitySelectContext } from '../contexts/EntitySelectContext';
 import { Link } from "react-router-dom";
 import axios from 'axios';
