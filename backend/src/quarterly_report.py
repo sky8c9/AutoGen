@@ -96,7 +96,6 @@ class QuarterlyReport(Report):
                 # Other non tracking earning type
                 if self.contains(payroll_item[i], EarningSummary.OTHER_LIST):
                     flag = False
-                    total_hours += EarningSummary.FIXED_HOUR
 
                 # PFML excluding list running sum
                 if self.contains(payroll_item[i], PFMLTemplate.EXCL_LIST):
@@ -122,7 +121,7 @@ class QuarterlyReport(Report):
             exempt_status = self.employee_info[ssn][PFMLTemplate.ID][4]
             if exempt_status == 'N':
                 self.total_care_wage += med_wages           
-            pfml_earning_payload = [round(total_hours), '{:.2f}'.format(med_wages)]
+            pfml_earning_payload = [round(total_hours) if flag else EarningSummary.FIXED_HOUR, '{:.2f}'.format(med_wages)]
 
             # EAMS report
             eams_wages = wage[i] - eams_excl_wage

@@ -15,11 +15,13 @@ class FakeDb:
         self.ein_list = self.legal_name_list = self.dba_list = self.address_list = self.contact_list = []
 
     def getEntity(self, idx):
+        # get up to date data entry and return entry at index idx
+        self.getEntityList()
         return [self.ein_list[idx], self.legal_name_list[idx], self.dba_list[idx], self.address_list[idx], self.contact_list[idx]]
 
     def getEntityList(self):
         # read entity data source file
-        df = pd.read_excel("../template/941_data_template.xlsx").to_numpy()
+        df = pd.read_excel("../entity_list.xlsx").to_numpy()
 
         # preprocess data if needed - delete this part if data already in the right format
         _, entity_payload, _ = np.hsplit(df, EntityDataSource.SPLIT_INDICES)
@@ -48,7 +50,6 @@ class ReportType(Enum):
     quarterly = "QuarterlyReport"
     
 db = FakeDb()
-entity_list = db.getEntityList()
 web = APIRouter()
 
 # APIs def
@@ -58,6 +59,7 @@ async def loadReport():
 
 @web.get("/entity")
 async def loadEntity():
+    entity_list = db.getEntityList()
     return entity_list
 
 @web.post("/generator")
