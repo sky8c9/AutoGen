@@ -88,6 +88,7 @@ services:
     env_file:
       - ./backend/.env
     volumes:
+      - ${ENTITY_LIST}:/app/entity_list.xlsx
       - ${TEMPLATE_PATH}/EAMS:/app/eams_template_out
       - ${TEMPLATE_PATH}/PFML:/app/med_template_out
       - ${TEMPLATE_PATH}/W2:/app/w2_template_out
