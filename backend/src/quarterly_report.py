@@ -119,7 +119,7 @@ class QuarterlyReport(Report):
             med_wages = wage[i] - med_leave_excl_wage
             self.total_med_wage += med_wages
             exempt_status = self.employee_info[ssn][PFMLTemplate.ID][4]
-            if exempt_status == 'N':
+            if exempt_status.lower() != 'y':
                 self.total_care_wage += med_wages           
             pfml_earning_payload = [round(total_hours) if flag else EarningSummary.FIXED_HOUR, '{:.2f}'.format(med_wages)]
 
