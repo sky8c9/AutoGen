@@ -21,6 +21,22 @@ class EntityDataSource:
     SORT_DEFAULT_COL = 2
     SPLIT_INDICES = [2, 7]
 
+class EFTPSDeposit:
+    # Deposit list
+    DEPOSIT_FILE = '../sample/EFTPS_batch_941deposit.xlsx'
+
+    # EST deposit time threshold
+    EST_THRESHOLD = 14
+
+    # Fields widths
+    WIDTHS = [9, 4, 8, 3, 4, 1, 9, 4, 1, 5, 6, 8, 15]
+
+    # Static indices
+    STATIC_INDICES = [0, 1, 2, 3, 5, 8, 9, 11]
+
+    # Output
+    OUTPUT_FOLDER = '../EFTPS_deposit_out'
+
 class Template:
     TEMPLATE_FILE = ''
     ID = ''
