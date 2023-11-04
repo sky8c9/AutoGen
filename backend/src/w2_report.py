@@ -61,9 +61,10 @@ class W2Report(Report):
 
     def processEmployerRecord(self):
         ein, legal_name, dba, address, contact = self.entity
+        address_first, address_second = address.split(', ', 1)
 
         # w2 employer record 
-        w2_info = '\n'.join([legal_name, address])
+        w2_info = '\n'.join([legal_name, address_first, address_second])
         w2_employer_record_len = self.getRecordLength(W2Template.TEMPLATE_FILE, W2Template.EMPLOYER_SHEET)
         self.w2_employer_record= np.empty(w2_employer_record_len, dtype=object)
         w2_employer_payload = [ein, w2_info]
