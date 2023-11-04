@@ -60,6 +60,7 @@ class W2Report(Report):
         self.appendToFile(ofile, employer_df, template_cls.EMPLOYER_SHEET, template_cls.SHEET_START_INDEX)
 
     def processEmployerRecord(self):
+        # decompose entity info
         ein, legal_name, dba, address, contact = self.entity
         address_first, address_second = address.split(', ', 1)
 
