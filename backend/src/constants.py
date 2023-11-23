@@ -13,6 +13,9 @@ class EarningSummary:
     # Fixed hour 
     FIXED_HOUR = 480
 
+    # 940 FUTA
+    FUTA_THRESHOLD = 7000
+
 class EntityDataSource:
     # Entity list
     ENTITY_SOURCE_FILE = '../sample/sample_entity_list.xlsx'

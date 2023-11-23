@@ -59,7 +59,7 @@ class QuarterlyReport(Report):
 
     def getEmployeeInfo(self):
         # create & store employee info dictionary for eams template & pfml template
-        records = pd.read_csv(self.info_file).fillna('').astype(str).to_numpy()
+        records = pd.read_csv(self.info_file, dtype=str).fillna('').to_numpy()
         for record in records: 
             ssn, first_name, middle_initial, last_name, dob, title, pfml_exempt, addr1, addr2, city, state, zip = record
             middle_initial = middle_initial[0] if len(middle_initial) > 0 else ''
@@ -73,7 +73,7 @@ class QuarterlyReport(Report):
             self.employee_info[ssn] = info
 
     def getEmployeeEarning(self):
-        record = pd.read_csv(self.earning_file).fillna('').astype(str).to_numpy()
+        record = pd.read_csv(self.earning_file, dtype=str).fillna('').astype(str).to_numpy()
         info, payroll_item, hour, wage = np.hsplit(record, np.size(record, 1))
 
         info = np.hstack(info)

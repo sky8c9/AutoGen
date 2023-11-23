@@ -9,23 +9,32 @@ class W2Report(Report):
     def __init__(self, entity, info_file, earning_file):
         super().__init__(entity, info_file, earning_file)
 
+        # w2 & efw2 params
         self.w2_employee_record = dict()
         self.efw2_employee_record = dict()
-
         self.w2_employer_record = None
         self.efw2_employer_record = None
 
+        # 940 FUTA params
+        self.total_payment = 0
+        self.excess_payment = 0
+
     def run(self):
         super().run()
-        
-        # create report - convert dict values to list
+
+        # 940 FUTA summary
+        futa_line3 = f'FUTA Line 3: ${self.total_payment}\n'
+        futa_line5 = f'FUTA Line 5: ${self.excess_payment}\n'
+        summary_txt = '\n'.join([futa_line3, futa_line5])
+
+        # create w2 report - convert dict values to list
         w2_record = [entry.tolist() for entry in self.w2_employee_record.values()] 
         w2_col_titles = self.getRecordTitle(W2Template.TEMPLATE_FILE, W2Template.EMPLOYEE_SHEET)
 
         efw2_record = [entry.tolist() for entry in self.efw2_employee_record.values()]
         efw2_col_titles = self.getRecordTitle(EFW2Template.TEMPLATE_FILE, EFW2Template.EMPLOYEE_SHEET)
 
-        return self.createSummary('W2 Templates', [w2_col_titles, efw2_col_titles], [w2_record, efw2_record])
+        return self.createSummary(summary_txt, [w2_col_titles, efw2_col_titles], [w2_record, efw2_record])
 
     def getRecordLength(self, template, sheet):
         return len(pd.read_excel(template, sheet_name=sheet).columns)
@@ -83,7 +92,7 @@ class W2Report(Report):
     
     def getEmployeeInfo(self):
         # create & store employee info dictionary for w2_template & efw2_template
-        records = pd.read_csv(self.info_file).fillna('').astype(str).to_numpy()
+        records = pd.read_csv(self.info_file, dtype=str).fillna('').to_numpy()
         for record in records: 
             ssn, first_name, middle_initial, last_name, dob, title, pfml_exempt, addr1, addr2, city, state, zip = record
             full_name = ' '.join([first_name, middle_initial, last_name])
@@ -133,6 +142,10 @@ class W2Report(Report):
         total_earning = other_earning + tips
         ss_wage = total_earning - tips
         med_wage = total_earning
+
+        # 940 FUTA computation
+        self.total_payment += total_earning
+        self.excess_payment += max(0, total_earning - EarningSummary.FUTA_THRESHOLD)
 
         # return earnings payload
         earning_payload = [total_earning, ss_wage, med_wage, tips]
