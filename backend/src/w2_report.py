@@ -23,8 +23,8 @@ class W2Report(Report):
         super().run()
 
         # 940 FUTA summary
-        futa_line3 = f'FUTA Line 3: ${self.total_payment}\n'
-        futa_line5 = f'FUTA Line 5: ${self.excess_payment}\n'
+        futa_line3 = f'FUTA Line 3: ${round(self.total_payment, 2)}\n'
+        futa_line5 = f'FUTA Line 5: ${round(self.excess_payment, 2)}\n'
         summary_txt = '\n'.join([futa_line3, futa_line5])
 
         # create w2 report - convert dict values to list

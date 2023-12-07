@@ -73,7 +73,7 @@ class QuarterlyReport(Report):
             self.employee_info[ssn] = info
 
     def getEmployeeEarning(self):
-        record = pd.read_csv(self.earning_file, dtype=str).fillna('').astype(str).to_numpy()
+        record = pd.read_csv(self.earning_file, dtype=str).fillna('').to_numpy()
         info, payroll_item, hour, wage = np.hsplit(record, np.size(record, 1))
 
         info = np.hstack(info)
