@@ -16,6 +16,9 @@ class EarningSummary:
     # 940 FUTA
     FUTA_THRESHOLD = 7000
 
+    # SS CAP VAL - 2023
+    SS_MAX = 160200
+
 class EntityDataSource:
     # Entity list
     ENTITY_SOURCE_FILE = '../sample/sample_entity_list.xlsx'
