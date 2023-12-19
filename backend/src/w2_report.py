@@ -141,7 +141,7 @@ class W2Report(Report):
         tips = self.employee_earning[ssn][EarningSummary.TIPS_EARNING]
         total_earning = other_earning + tips
 
-        ss_wage = min(total_earning - tips, EarningSummary.SS_MAX)
+        ss_wage = min(total_earning - tips, max(0, EarningSummary.SS_MAX - tips))
         med_wage = total_earning
 
         # 940 FUTA computation
