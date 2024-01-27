@@ -95,7 +95,7 @@ class W2Report(Report):
         records = pd.read_csv(self.info_file, dtype=str).fillna('').to_numpy()
         for record in records: 
             ssn, first_name, middle_initial, last_name, dob, title, pfml_exempt, addr1, addr2, city, state, zip = record
-            full_name = ' '.join([first_name, middle_initial, last_name])
+            full_name = ' '.join(filter(None, [first_name, middle_initial, last_name]))
             ssn_efw2 = ''.join(ssn.split('-'))
             w2_info_payload = [ssn, f'{full_name}\n{addr1} {addr2}\n{city}, {state}, {zip}']
             efw2_info_payload = ['RW', ssn_efw2, first_name, middle_initial, last_name, addr1, city, state, zip]
