@@ -16,8 +16,8 @@ class EarningSummary:
     # 940 FUTA
     FUTA_THRESHOLD = 7000
 
-    # SS CAP VAL - 2023
-    SS_MAX = 160200
+    # SS CAP VAL - 2024
+    SS_MAX = 168600
 
 class EntityDataSource:
     # Entity list
@@ -48,7 +48,7 @@ class Template:
     ID = ''
     OUTPUT_FOLDER = ''
     SHEET_START_INDEX = 2
-    TAX_YEAR = 2023
+    TAX_YEAR = 2024
 
 class W2Template(Template):
     TEMPLATE_FILE = '../template/w2_data_template.xlsx'
@@ -87,9 +87,9 @@ class PFMLTemplate(Template):
     ID = 'PFML'
     OUTPUT_FOLDER = '../med_template_out'
 
-    EMPLOYER_SHARE = 0.2724
+    EMPLOYER_SHARE = 0.2857
     EMPLOYEE_SIZE_THRESHOLD = 50
-    PFML_TAX_RATE = 0.008
+    PFML_TAX_RATE = 0.0074
     CARES_FUND_TAX_RATE = 0.0058
 
     COL_TITLE = ['SSN', 'LastName', 'FirstName', 'MiddleInitial', 'Hours', 'Wages', 'WACaresExempt(Y/N)', 'DOB']
